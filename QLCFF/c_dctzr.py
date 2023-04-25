@@ -1,62 +1,162 @@
-#!/usr/bin/env python
-# coding: utf-8
+import numpy as np
+import pandas as pd
+from abc import *
+from typing import Tuple, List, Dict, Any
+
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import LabelEncoder
+from joblib import Parallel, delayed
 
 
-# binning: requires dataframe, returns dataframe
-# nb =  maximum number of bins, default 20
-# detail = print report, boolean, default False
-# R doc for miMRMR asserts 10 bins is consistent with the literature
-# 20 bins with uniform strategy means each bin is 5% of observed values
-#   (ideally - it is really max_bins, uniform means all are the same size)
+# thanks to : https://github.com/Anylee2142/
 
 
-def mkbins(indf, nb=20, detail=False):
-    import numpy
-    import pandas
-    from sklearn.preprocessing import KBinsDiscretizer
+class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
+    def __init__(self, maxbins=10, numjobs=1, msglvl=50):
 
-    print('Using only numeric datatypes',end='')
-    dzdf = indf.select_dtypes(
-        include=["number",'bool','boolean'],exclude=["timedelta64","complexfloating"]).copy()
-    dxc=[]
-    dxc.extend(x for x in indf.columns.values if x not in dzdf.columns.values)
-    if len(dxc) > 0:
-        print('\nDropping ineligible features (text features should be one-hot encoded)')
-        for c in range(len(dxc)):
-            print('\t',dxc[c],' [ dtype =',indf.dtypes[dxc[c]].name,']')
-    else:
-        print(' [ All features are in ]')
-        
-# all pyTF columns
-    pytf = dzdf.select_dtypes(include=['bool','boolean']).columns.values
-    for c in range(len(pytf)):
-        dzdf[c] = dzdf[c].replace({True: 1, False: 0})
+        self.maxbins = maxbins
+        self.cutpoints = dict()
 
-# signed number columns
-    sn = dzdf.select_dtypes(
-        include=["signedinteger","floating"],exclude=["timedelta64"]).columns.values
 
-    for col in dzdf.columns:
-        uv = len(dzdf[col].unique())
-        if uv > nb:
-            arr = numpy.array(dzdf[col])
-            binz = KBinsDiscretizer(strategy='uniform', encode='ordinal', 
-                                    n_bins=nb).fit(arr.reshape(-1, 1))
-            dzdf[col] = binz.transform(arr.reshape(len(arr),1))
+    def fit(self, X, y, numjobs, msglvl, detail=False):
+        '''
+        Get cutpoints, then discretize each feature
+        :param X: pd.DataFrame with features
+        :param y: pd.Series with target
+        :n_jobs, verbose: joblib
+        :return: self
+        '''
+        prebin_df, col_list = self._prep_df(X, self.maxbins)
+
+        if isinstance(y, np.ndarray):
+            sy = pd.Series(data=y, name='target')
         else:
-            if dzdf[col].name in sn:
-                if dzdf[col].min() < 0:
-                    dzdf[col] += abs(dzdf[col].min())
-        
-    if detail:
-        colwid = max(len(n) for n in indf.columns.values)    # +i for padding
-        print('Unique value count: Original ::> Binned\n  Same for all features except:')
-        for col in indf.columns:
-            lctrn = len(indf[col].unique())
-            lctst = len(dzdf[col].unique())
-            if lctrn != lctst:
-                print("{: <{colwid}} {: >5} {} {: <5}".format(
-                    col,lctrn,'::>',lctst,colwid=colwid))
+            sy = y
 
-    return dzdf
+        if sy.dtype == 'O':
+            sy = pd.Series(data=LabelEncoder().fit_transform(sy),name=sy.name)
+
+        self.cutpoints = self._prep_get_cutpoints(prebin_df, sy, col_list, numjobs, msglvl)
+
+        self.binned_df = X.copy()
+        for feature_name, cutpoints in self.cutpoints.items():
+            if len(cutpoints) < 2:
+                print('\nWARNING: No cutpoints could be calculated for',feature_name)
+                print('           Falling back to uniform:linear')
+
+                feature = X[feature_name]
+                bin_edges = np.linspace(feature.min(), feature.max(), self.maxbins + 1)
+                cutpoints = bin_edges[1:-1].tolist()
+
+            self.binned_df[feature_name] = pd.Series(
+                data=np.searchsorted(cutpoints, X.loc[:, feature_name]),
+                name=feature_name)
+
+        self.binned_df.reset_index(inplace = True, drop = True)
+
+        return self
+
+
+    def transform(self, X, detail=False):
+        '''
+        :detail: report outcome of binning
+        :return: discretized X
+        '''
+        if detail:
+            colwid = max(len(n) for n in self.binned_df.columns.values)    # +i for padding
+            print('\nUnique value count: Original ::> Binned\n  Same for all features except:')
+            for col in self.binned_df.columns:
+                lcx = len(X[col].unique())
+                lcb = len(self.binned_df[col].unique())
+                if lcx != lcb:
+                    print("{: <{colwid}} {: >5} {} {: <5}".format(
+                        col,lcx,'::>',lcb,colwid=colwid))
+
+        return self.binned_df
+
+
+    def fit_transform(self, X, y, numjobs, msglvl, detail=False):
+        return self.fit(X, y, numjobs, msglvl).transform(X, detail=detail)
+
+
+    @abstractmethod
+    def _get_cutpoints(self):
+        '''
+        This method should describe how to get cutpoints according to each algorithm
+        '''
+        raise NotImplementedError
+
+
+    def _prep_get_cutpoints(self, features, target, col_list, numjobs, msglvl):
+        '''
+        Get cutpoints from every continuous feature
+        :param features, col_list: pd.Dataframe as col_list
+        :param target_: pd.Series with target
+        :return: cutpoints for every continuous feature {feature name: List of cutpoints}
+        '''
+        parallel = Parallel(n_jobs=numjobs, verbose=msglvl)
+
+        work = parallel( 
+            delayed(self._get_cutpoints)(
+                feature=features.loc[:, feature_name],
+                target=target,
+                feature_name=feature_name
+            ) 
+            for feature_name in col_list
+        )
+
+        cutpoints_each_feature = {k: v for (k, v) in work}
+              
+        return cutpoints_each_feature
+
+
+    def _prep_df(self, indf, nb=10):
+        print('Using only numeric datatypes',end='')
+        dzdf = indf.select_dtypes(
+            include=['number','bool','boolean'],exclude=['timedelta64','complexfloating']).copy()
+
+        dxc=[]
+        dxc.extend(x for x in indf.columns.values if x not in dzdf.columns.values)
+        if len(dxc) > 0:
+            print('\nDropping ineligible features (text features should be one-hot encoded)')
+            for c in range(len(dxc)):
+                print('\t',dxc[c],' [ dtype =',indf.dtypes[dxc[c]].name,']')
+        else:
+            print(' [ All features are in ]')
+
+# all signed numbers
+        sn = dzdf.select_dtypes(
+            include=['signedinteger','floating'],exclude=['timedelta64']).columns.values                    
+        for c in range(len(sn)):
+            if dzdf[sn[c]].min() < 0:
+                dzdf[sn[c]] += abs(dzdf[sn[c]].min())
+
+# all pyTF columns
+        pytf = dzdf.select_dtypes(include=['bool','boolean']).columns.values
+        for c in range(len(pytf)):
+            dzdf[sn[c]] = dzdf[sn[c]].replace({True: 1, False: 0})
+
+# list of column names for get_cutpoints       
+        ftc=[]
+
+        lblenc = LabelEncoder()
+        for col in dzdf.columns:
+            uv = len(dzdf[col].unique())
+            if uv == 1:
+                print('WARNING: Dropping single-valued feature', dzdf[col].name)
+                dzdf.drop(dzdf[col].name, axis=1, inplace=True)
+            elif uv == 2: 
+                if (dzdf[col].min() != 0) or (dzdf[col].max() != 1):
+                    dzdf[col] = dzdf[col].replace({dzdf[col].max(): 1, dzdf[col].min(): 0})
+            elif uv > nb:
+                if (min(dzdf[col]) == 0) and (max(dzdf[col]) > 1):
+                    dzdf[col] += 1
+                ftc.append(dzdf[col].name)
+            else:
+                dzdf[col] = lblenc.fit_transform(dzdf[col])
+
+        dzdf.reset_index(inplace = True, drop = True)
+        return dzdf, ftc
+
+
 

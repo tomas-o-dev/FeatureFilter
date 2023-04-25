@@ -4,8 +4,8 @@
 import numpy
 import pandas
 
-#only internal: get_ycor,get_fcor
-from .mcor import mutual_info, symm_uncert 
+# only internal: get_ycor,get_fcor
+from .f_mcor import mutual_info, symm_uncert 
 
 def get_ycor(flist, indf, ingt):
     ctbl=[]
@@ -31,7 +31,6 @@ def get_fcor(hicorr,indf,corrmtx,sucmx):
         arr=numpy.array(indf[hicorr[x][0]])
         brr=numpy.array(indf[hicorr[x][1]])
 
-#        pcc = numpy.corrcoef(arr, brr)[0,1]
         pcc = corrmtx.loc[hicorr[x][0],hicorr[x][1]]
         if sucmx:
             suc = corrmtx.loc[hicorr[x][1],hicorr[x][0]]
@@ -46,7 +45,7 @@ def get_fcor(hicorr,indf,corrmtx,sucmx):
     return ctbl
 
 
-#import external: filter_fcy,filter_fdr,filter_fcc
+# import external: filter_fcy,filter_fdr,filter_fcc
 
 
 # naive filter: 
@@ -68,7 +67,8 @@ def filter_fcy(indf, ingt, minpc=0.1, minsu=0.01):
 
 
 def filter_fdr(dfin, gtin, t=0.01, usefdr=True):
-    from .uvfs import uvtcsq
+    from .f_uvfs import uvtcsq
+
     highfdr=uvtcsq(dfin, gtin, t, usefdr)
     if len(highfdr) > 1:
         fdr_yc=get_ycor(highfdr, dfin, gtin)
@@ -79,7 +79,8 @@ def filter_fdr(dfin, gtin, t=0.01, usefdr=True):
 
 
 def filter_fcc(dfin, ingt, t=0.7, usesu=False):
-    from .mcor import mulcol
+    from .f_mcor import mulcol
+
     dfdrop, proxies, hicorr, cormtx = mulcol(dfin, ingt, t, usesu)
     if len(dfdrop) > 1:
         fccd_yc=get_ycor(dfdrop, dfin, ingt)
