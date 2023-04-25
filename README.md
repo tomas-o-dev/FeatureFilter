@@ -1,7 +1,7 @@
 # FeatureFilter
 Quick Layered Correlation-based Feature Filtering
 
-General library requirements:
+General library requirements (Release 0.04):
 * Dataframe with only numeric columns
 * Numeric class labels in "array-like" with shape (n,1)
 * Binary classification (not multiclass or multilabel)"
