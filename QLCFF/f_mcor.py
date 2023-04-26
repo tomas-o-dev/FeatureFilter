@@ -52,9 +52,40 @@ def symm_uncert(x, y):
     """
     entropy_x = entropy(x)
     entropy_y = entropy(y)
-    return 2 * ((entropy_x - conditional_entropy(y, x))
-                / (entropy_x + entropy_y))
+    if (entropy_x != 0) or (entropy_y != 0):
+        suv = 2 * ((entropy_x - conditional_entropy(y, x)) / (entropy_x + entropy_y))
+    else:
+        suv = numpy.nextafter(0, 1)
+    return suv
 
+
+### - joblib for sucorr
+def updatecmx(indf,cmx,i,j):
+    item = cmx.iloc[j:(j+1), (i+1):(i+2)]
+    col = item.columns
+    row = item.index
+    su = symm_uncert(indf[col[0]], indf[row[0]])
+    cmx.iloc[j:(j+1), (i+1):(i+2)] = su 
+
+
+def mksucm(dfin, numjobs= -2, msglvl=0):
+    from joblib import Parallel, delayed
+#    parallel = Parallel(n_jobs=numjobs, verbose=msglvl)
+# the way to handle this type of nested loop is shared mem and reuse pool
+
+    cmx = dfin.corr()
+    pb='%'
+    with Parallel(n_jobs=numjobs, verbose=msglvl, require='sharedmem') as parallel:
+        for i in range(len(cmx.columns) - 1):
+            work = parallel( 
+                delayed(updatecmx)(
+                dfin,cmx,i,j
+                )    
+                for j in range(i+1)
+            )
+            print(pb,end='')
+    print('  --Done')
+    return cmx
 
 
 ## call this --
@@ -64,26 +95,13 @@ def symm_uncert(x, y):
 def mulcol(indf, ingt, t=0.7, su=False):
 
 # create correlation matrix
-    corr_matrix = indf.corr()
+#----
     if su:
         print('Calculating the SU correlation matrix takes some time ...')
-        lc=0
-        for i in range(len(corr_matrix.columns) - 1):
-            for j in range(i+1):
-                item = corr_matrix.iloc[j:(j+1), (i+1):(i+2)]
-                col = item.columns
-                row = item.index
-                su = symm_uncert(indf[col[0]], indf[row[0]])
-                corr_matrix.iloc[j:(j+1), (i+1):(i+2)] = su 
-
-                pb='%'
-                if lc <20:
-                    lc = lc+1
-                else:
-                    lc=0
-                    print(pb,end='')
-        print('  --Done')
-
+        corr_matrix = mksucm(indf, numjobs= -2, msglvl=0)  
+    else:
+        corr_matrix = indf.corr()
+#----
 # correlations > threshold
     drop_cor = []
     for i in range(len(corr_matrix.columns) - 1):
