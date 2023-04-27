@@ -7,10 +7,12 @@
 import numpy
 import pandas 
 
-from collections import Counter
+from collections import Counter  #https://www.guru99.com/python-counter-collections-example.html#5
+from operator import itemgetter  
+#https://docs.python.org/3/library/operator.html
 from itertools import groupby
 from math import log, fsum
-from operator import itemgetter
+
 
 #    Parameters
 #    x : array-like, shape (n,)
@@ -65,7 +67,8 @@ def updatecmx(indf,cmx,i,j):
     col = item.columns
     row = item.index
     su = symm_uncert(indf[col[0]], indf[row[0]])
-    cmx.iloc[j:(j+1), (i+1):(i+2)] = su 
+#    cmx.iloc[j:(j+1), (i+1):(i+2)] = su
+    return [i,j,su]
 
 
 def mksucm(dfin, numjobs= -2, msglvl=0):
@@ -75,7 +78,9 @@ def mksucm(dfin, numjobs= -2, msglvl=0):
 
     cmx = dfin.corr()
     pb='%'
-    with Parallel(n_jobs=numjobs, verbose=msglvl, require='sharedmem') as parallel:
+    sulist=[]
+
+    with Parallel(n_jobs=numjobs, verbose=msglvl) as parallel:
         for i in range(len(cmx.columns) - 1):
             work = parallel( 
                 delayed(updatecmx)(
@@ -83,8 +88,16 @@ def mksucm(dfin, numjobs= -2, msglvl=0):
                 )    
                 for j in range(i+1)
             )
+            sulist.extend(work)
             print(pb,end='')
-    print('  --Done')
+
+    print('  --Done, Updating...')
+    for x in range(len(sulist)):
+        i=sulist[x][0]
+        j=sulist[x][1]
+        v=sulist[x][2]
+        cmx.iloc[j:(j+1), (i+1):(i+2)] = v
+
     return cmx
 
 
