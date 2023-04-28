@@ -19,26 +19,24 @@ from .c_dctzr import Discretizer
 #    pre-defined significance level (until all alternative hypothesises become passed)
 
 class ChiMerge(Discretizer):
-    def __init__(self, significance_level=0.1, maxbins=10, numjobs=1, msglvl=50):
+    def __init__(self, significance_level=0.1, mkbins='ten', numjobs=1, msglvl=50):
         # significance_level = 0.1, 0.05, 0.01... etc
         assert 1 > significance_level > 0, 'significance level should be (0,1)'
-        assert maxbins > 3, 'maxbins should be bigger than 3'
 
         Discretizer.__init__(
             self=self,
-            maxbins=maxbins,
             numjobs=numjobs,
             msglvl=msglvl
         )
 
         self.significance_level = significance_level
-        self.max_cutpoints = maxbins-1
+        self.mkbins = mkbins
 
 
-    def _chi_score(self, intervals: List[pd.Series]) -> float:
+    def _chi_score(self, intervals):
         '''
         Compute chi square statistics from paper
-        :param intervals: List containing pd.Serieses that have frequencies of each class
+        :param intervals: List of pd.Series with frequencies of each class
         :return: chi square from paper
         '''
 
@@ -62,9 +60,14 @@ class ChiMerge(Discretizer):
         try:
             E = np.multiply(R, C) / N
 
+#PROBLEM: chi2 = sometimes raises 
+# RuntimeWarning: invalid value encountered in true_divide
+#so E is zero/nan
+
             chi2 = np.nansum(
                 np.power(A - E, 2) / E
             )
+
         except ValueError as ve:
             # To catch unidentical dimension error, R <-> C, A <-> E
             print(ve)
@@ -80,6 +83,19 @@ class ChiMerge(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
+
+        # max_cutpoints
+        n = len(np.unique(feature)) 
+
+        if self.mkbins == 'sqrt':
+            max_cutpoints = round(np.sqrt(n))
+
+        elif self.mkbins == 'log':
+            max_cutpoints = max(2, 2*(round(np.log10(n))))
+
+        else:
+            max_cutpoints = 10
+
         feature_target = pd.concat([feature, target], axis=1)
         feature_target.sort_values(by=[feature.name], inplace=True)
         feature_target.reset_index(drop=True, inplace=True)
@@ -112,8 +128,9 @@ class ChiMerge(Discretizer):
                 mode = True
                 continue
 
-            # 2. If upper condition is satisfied, merge them until # of intervals is lesser than max_cutpoints
-            if mode is True and len(intervals) <= self.max_cutpoints:
+            # 2. If upper condition is satisfied, merge them until num_intervals < max_cutpoints
+
+            if mode is True and len(intervals) <= max_cutpoints:
                 break
 
             # Merge intervals that have lowest chi2 score, which means they have similar class frequencies
