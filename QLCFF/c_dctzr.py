@@ -12,9 +12,8 @@ from joblib import Parallel, delayed
 
 
 class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
-    def __init__(self, maxbins=10, numjobs=1, msglvl=50):
+    def __init__(self, numjobs=1, msglvl=50):
 
-        self.maxbins = maxbins
         self.cutpoints = dict()
 
 
@@ -26,7 +25,8 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         :n_jobs, verbose: joblib
         :return: self
         '''
-        prebin_df, col_list = self._prep_df(X, self.maxbins)
+
+        prebin_df, col_list = self._prep_df(X)
 
         if isinstance(y, np.ndarray):
             sy = pd.Series(data=y, name='target')
@@ -41,11 +41,11 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         self.binned_df = X.copy()
         for feature_name, cutpoints in self.cutpoints.items():
             if len(cutpoints) < 2:
-                print('\nWARNING: No cutpoints could be calculated for',feature_name)
-                print('           Falling back to uniform:linear')
+                print('\nWARNING: No',self.mkbins,'cutpoints could be calculated for',feature_name)
+                print('           Falling back to mkbins=ten')
 
                 feature = X[feature_name]
-                bin_edges = np.linspace(feature.min(), feature.max(), self.maxbins + 1)
+                bin_edges = np.linspace(feature.min(), feature.max(), 11)
                 cutpoints = bin_edges[1:-1].tolist()
 
             self.binned_df[feature_name] = pd.Series(
@@ -53,7 +53,6 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
                 name=feature_name)
 
         self.binned_df.reset_index(inplace = True, drop = True)
-
         return self
 
 
@@ -105,12 +104,11 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
             for feature_name in col_list
         )
 
-        cutpoints_each_feature = {k: v for (k, v) in work}
-              
+        cutpoints_each_feature = {k: v for (k, v) in work}            
         return cutpoints_each_feature
 
 
-    def _prep_df(self, indf, nb=10):
+    def _prep_df(self, indf):
         print('Using only numeric datatypes',end='')
         dzdf = indf.select_dtypes(
             include=['number','bool','boolean'],exclude=['timedelta64','complexfloating']).copy()
@@ -148,12 +146,8 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
             elif uv == 2: 
                 if (dzdf[col].min() != 0) or (dzdf[col].max() != 1):
                     dzdf[col] = dzdf[col].replace({dzdf[col].max(): 1, dzdf[col].min(): 0})
-            elif uv > nb:
-                if (min(dzdf[col]) == 0) and (max(dzdf[col]) > 1):
-                    dzdf[col] += 1
-                ftc.append(dzdf[col].name)
             else:
-                dzdf[col] = lblenc.fit_transform(dzdf[col])
+                ftc.append(dzdf[col].name)                
 
         dzdf.reset_index(inplace = True, drop = True)
         return dzdf, ftc
