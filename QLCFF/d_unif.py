@@ -7,18 +7,15 @@ from .c_dctzr import Discretizer
 # thanks to : https://github.com/Anylee2142/
 
 class uniform(Discretizer):
-    def __init__(self, method='lin', maxbins=10, numjobs=1, msglvl=0):
-        assert maxbins > 1, 'maxbins should be bigger than 1'
+    def __init__(self, mkbins='ten', numjobs=1, msglvl=0):
 
         Discretizer.__init__(
             self=self,
-            maxbins=maxbins,
             numjobs=1,
             msglvl=0
         )
 
-        self.method = method
-        self.maxbins = maxbins
+        self.mkbins = mkbins
 
 
     def _get_cutpoints(self, feature, target, feature_name):
@@ -26,7 +23,7 @@ class uniform(Discretizer):
         Get cutpoints from one continuous feature
         :param feature: continuous column to be discretized
         :param target: target column considered
-        :param method: 'lin' [1],[2]; 'log' [1]; 'sqrt' [3]
+        :param mkbins: 'ten' [1],[2]; 'log' [1]; 'sqrt' [3]
 
     [1] J. Dougherty, R. Kohavi, and M. Sahami, “Supervised and unsupervised
     discretization of continuous features,” in ICML 1995, pp. 194–202
@@ -38,24 +35,16 @@ class uniform(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
+        n = len(np.unique(feature)) 
 
-        if self.method == 'sqrt':
-            n = len(np.unique(feature)) 
-            nbins = min(self.maxbins, round(np.sqrt(n)))
-            bin_edges = np.linspace(feature.min(), feature.max(), nbins + 1)
+        if self.mkbins == 'sqrt':
+            nbins = round(np.sqrt(n))
 
-        elif self.method == 'log':
-            n = len(np.unique(feature)) 
-            nbins = min(self.maxbins, max(1, 2*(round(np.sqrt(n)))))
-            if feature.max() < (1+np.nextafter(1,1)):
-                bin_edges = np.logspace(feature.min(), feature.max(), nbins + 1)
-                bin_edges = bin_edges / 10
-                if feature.min() == 0:
-                    bin_edges[bin_edges == 0.1] = 0
-            else:
-                bin_edges = np.logspace(np.log10(feature.min()), np.log10(feature.max()), nbins + 1)
+        elif self.mkbins == 'log':
+            nbins = max(2, 2*(round(np.log10(n))))
 
         else:
-            bin_edges = np.linspace(feature.min(), feature.max(), self.maxbins + 1)
+            nbins = 10
 
+        bin_edges = np.linspace(feature.min(), feature.max(), nbins + 1)
         return feature_name, bin_edges[1:-1].tolist()
