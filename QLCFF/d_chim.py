@@ -60,10 +60,6 @@ class ChiMerge(Discretizer):
         try:
             E = np.multiply(R, C) / N
 
-#PROBLEM: chi2 = sometimes raises 
-# RuntimeWarning: invalid value encountered in true_divide
-#so E is zero/nan
-
             chi2 = np.nansum(
                 np.power(A - E, 2) / E
             )
@@ -141,18 +137,12 @@ class ChiMerge(Discretizer):
 
             # If one feature merged into one interval, then it's irrelavant feature
             if len(intervals) == 1:
-                return []
+                return feature_name, []
 
         assert isinstance(intervals, list), '`intervals` should be list type'
 
         ranges = [interval.name.replace(' ', '').split('~')[0] if isinstance(interval.name, str)
                   else str(interval.name)
                   for interval in intervals]
-
-        try:
-            ranges = [float(each) for each in ranges]
-        except ValueError as ve:
-            # To catch conversion for not-floatable values. ex) 'example'
-            print('Error during chimerge, not continuous feature')
 
         return feature_name, ranges
