@@ -121,20 +121,18 @@ def N_1(feature, base=2) -> float:
 
 
 class MDLP(Discretizer):
-    def __init__(self, base=2, maxbins=10, numjobs=1, msglvl=50):
+    def __init__(self, base=2, mkbins='ten', numjobs=1, msglvl=50):
         assert base > 0, 'base of logarithm should be bigger than 0'
         assert base != 1, 'base of logarithm should not be 1'
-        assert maxbins > 3, 'maxbins should be bigger than 3'
 
         Discretizer.__init__(
             self=self,
-            maxbins=maxbins,
             numjobs=1,
             msglvl=0
         )
 
         self.base = base
-        self.max_cutpoints=maxbins-1
+        self.mkbins = mkbins
 
 
     def _find_best_cutpoint(self, feature, possible_cutpoints, target):
@@ -211,7 +209,17 @@ class MDLP(Discretizer):
         sorted_target = target[sorted_feature.index]
         subranges = [(sorted_feature, sorted_target)]
 
-        num_iter = self.max_cutpoints
+        # max_cutpoints
+        n = len(np.unique(feature)) 
+
+        if self.mkbins == 'sqrt':
+            num_iter = round(np.sqrt(n))
+
+        elif self.mkbins == 'log':
+            num_iter = max(2, 2*(round(np.log10(n))))
+
+        else:
+            num_iter = 10
 
         while num_iter > 0 and subranges:
             feature, target = subranges.pop(0)
@@ -228,5 +236,4 @@ class MDLP(Discretizer):
 
         cutpoints = list(filter(lambda elem: elem != None, cutpoints))
         cutpoints.sort()
-
         return feature_name, cutpoints
