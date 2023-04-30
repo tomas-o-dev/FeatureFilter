@@ -47,8 +47,7 @@ def get_fcor(hicorr,indf,corrmtx,sucmx):
 
 # import external: filter_fcy,filter_fdr,filter_fcc
 
-
-# naive filter: 
+# floor filter: 
 # keep if suy > 0.01 or pcy > 0.1
 
 def filter_fcy(indf, ingt, minpc=0.1, minsu=0.01):
