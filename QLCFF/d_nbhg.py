@@ -39,7 +39,7 @@ def nbins(feature, mkbins):
 
 # thanks to : https://github.com/Anylee2142/
 
-class uniform(Discretizer):
+class unifhgm(Discretizer):
     def __init__(self, mkbins='hgrm', numjobs=1, msglvl=0):
 
         Discretizer.__init__(
