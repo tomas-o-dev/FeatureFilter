@@ -132,7 +132,10 @@ class MDLP(Discretizer):
         )
 
         self.base = base
-        self.mkbins = mkbins
+        if mkbins in ['sqrt', 'log', 'ten']:
+            self.mkbins = mkbins
+        else:
+            self.mkbins='ten'
 
 
     def _find_best_cutpoint(self, feature, possible_cutpoints, target):
@@ -204,22 +207,15 @@ class MDLP(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
+        from .d_unif import nbins
+
         cutpoints = []
         sorted_feature = feature.sort_values()
         sorted_target = target[sorted_feature.index]
         subranges = [(sorted_feature, sorted_target)]
 
         # max_cutpoints
-        n = len(np.unique(feature)) 
-
-        if self.mkbins == 'sqrt':
-            num_iter = round(np.sqrt(n))
-
-        elif self.mkbins == 'log':
-            num_iter = max(2, 2*(round(np.log10(n))))
-
-        else:
-            num_iter = 10
+        num_iter = nbins(feature, self.mkbins)
 
         while num_iter > 0 and subranges:
             feature, target = subranges.pop(0)
