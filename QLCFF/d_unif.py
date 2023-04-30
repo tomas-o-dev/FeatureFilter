@@ -4,10 +4,43 @@ from typing import Tuple, List, Dict, Any
 
 from .c_dctzr import Discretizer
 
+
+def hgbins(feature):
+    bnz, egz = np.histogram(feature, bins='auto')
+    egz = egz[np.nonzero(bnz)]
+    if feature.min != 0:
+        egz[0:1] = 0
+
+    while (len(egz) /2) > 8:
+        egz[1::2] = [0]*(len(egz)//2)
+        egz = egz[np.nonzero(egz)]
+        egz = np.insert(egz, 0, 0)
+
+    edges = np.append(egz,[feature.max()])
+    return edges
+
+
+def nbins(feature, mkbins):
+    n = len(np.unique(feature)) 
+
+    if mkbins == 'sqrt':
+        bins = np.floor(np.sqrt(n)).astype(int)
+    elif mkbins == 'log':
+        if feature.max() < (1+np.nextafter(1,1)):
+            bins = max(1, 2*(np.floor(np.log(n)).astype(int)))
+        else:
+            bins = max(1, 2*(np.floor(np.log10(n)).astype(int)))
+    else:
+        bins = 10
+
+    return bins
+
+
+
 # thanks to : https://github.com/Anylee2142/
 
 class uniform(Discretizer):
-    def __init__(self, mkbins='ten', numjobs=1, msglvl=0):
+    def __init__(self, mkbins='hgrm', numjobs=1, msglvl=0):
 
         Discretizer.__init__(
             self=self,
@@ -15,7 +48,10 @@ class uniform(Discretizer):
             msglvl=0
         )
 
-        self.mkbins = mkbins
+        if mkbins in ['sqrt', 'log', 'ten', 'hgrm']:
+            self.mkbins = mkbins
+        else:
+            self.mkbins='hgrm'
 
 
     def _get_cutpoints(self, feature, target, feature_name):
@@ -36,29 +72,10 @@ class uniform(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
-        n = len(np.unique(feature)) 
-
-        if self.mkbins == 'sqrt':
-            nbins = floor(np.sqrt(n))
-
-        elif self.mkbins == 'log':
-            nbins = max(1, 2*(floor(np.log10(n))))
-
+        if self.mkbins == 'hgrm':
+            bin_edges = hgbins(feature)
         else:
-            nbins = 10
-
-        if self.mkbins == 'auto':
-            bnz, egz = np.histogram(feature, bins='auto')
-            egz = egz[np.nonzero(bnz)]
-
-            while (len(egz) /2) > 8:
-                egz[1::2] = [0]*(len(egz)//2)
-                egz = egz[np.nonzero(egz)]
-                egz = np.insert(egz, 0, min(feature))
-
-            bin_edges = np.append(egz,[feature.max()])
-
-        else:
-            bin_edges = np.linspace(feature.min(), feature.max(), nbins + 1)
+            numbins = nbins(feature, self.mkbins)
+            bin_edges = np.linspace(feature.min(), feature.max(), numbins + 1)
 
         return feature_name, bin_edges[1:-1].tolist()
