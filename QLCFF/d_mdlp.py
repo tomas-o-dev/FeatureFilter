@@ -122,8 +122,7 @@ def N_1(feature, base=2) -> float:
 
 class MDLP(Discretizer):
     def __init__(self, base=2, mkbins='ten', numjobs=1, msglvl=50):
-        assert base > 0, 'base of logarithm should be bigger than 0'
-        assert base != 1, 'base of logarithm should not be 1'
+        assert 1 < base < 11, 'base for log should be 2 or 10'
 
         Discretizer.__init__(
             self=self,
@@ -207,7 +206,7 @@ class MDLP(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
-        from .d_unif import nbins
+        from .d_nbhg import nbins
 
         cutpoints = []
         sorted_feature = feature.sort_values()
