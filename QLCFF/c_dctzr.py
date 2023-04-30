@@ -7,7 +7,6 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import LabelEncoder
 from joblib import Parallel, delayed
 
-
 # thanks to : https://github.com/Anylee2142/
 
 
@@ -25,6 +24,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         :n_jobs, verbose: joblib
         :return: self
         '''
+        from .d_unif import hgbins
 
         prebin_df, col_list = self._prep_df(X)
 
@@ -42,10 +42,10 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         for feature_name, cutpoints in self.cutpoints.items():
             if len(cutpoints) < 2:
                 print('\nWARNING: No',self.mkbins,'cutpoints could be calculated for',feature_name)
-                print('           Falling back to mkbins=ten')
+                print('           Falling back to mkbins=hgrm')
 
-                feature = X[feature_name]
-                bin_edges = np.linspace(feature.min(), feature.max(), 11)
+                feature = X[feature_name].values
+                bin_edges = hgbins(feature)
                 cutpoints = bin_edges[1:-1].tolist()
 
             self.binned_df[feature_name] = pd.Series(
