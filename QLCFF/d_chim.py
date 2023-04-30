@@ -19,9 +19,8 @@ from .c_dctzr import Discretizer
 #    pre-defined significance level (until all alternative hypothesises become passed)
 
 class ChiMerge(Discretizer):
-    def __init__(self, significance_level=0.1, mkbins='ten', numjobs=1, msglvl=50):
-        # significance_level = 0.1, 0.05, 0.01... etc
-        assert 1 > significance_level > 0, 'significance level should be (0,1)'
+    def __init__(self, plvl=0.1, mkbins='ten', numjobs=1, msglvl=50):
+        assert 1 > plvl > 0, 'plvl (significance level) should be 0.01, 0.05, or 0.1'
 
         Discretizer.__init__(
             self=self,
@@ -29,7 +28,7 @@ class ChiMerge(Discretizer):
             msglvl=msglvl
         )
 
-        self.significance_level = significance_level
+        self.plvl = plvl
         if mkbins in ['sqrt', 'log', 'ten']:
             self.mkbins = mkbins
         else:
@@ -82,7 +81,7 @@ class ChiMerge(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
-        from .d_unif import nbins
+        from .d_nbhg import nbins
 
         # max_cutpoints
         max_cutpoints = nbins(feature, self.mkbins)
@@ -101,7 +100,7 @@ class ChiMerge(Discretizer):
         intervals = [unique_value[1] for unique_value in frequencies.iterrows()]
 
         num_of_classes = len(target.unique())
-        chi2_threshold = chi2.ppf(1 - self.significance_level, num_of_classes - 1)
+        chi2_threshold = chi2.ppf(1 - self.plvl, num_of_classes - 1)
 
         mode = False
         while True:
