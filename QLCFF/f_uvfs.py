@@ -11,15 +11,17 @@
 # returns a list of features most likely to have high FPR
 #     or an empty list if all are likely to have high FPR
 
-def uvtcsq(indf, ingt, t=0.05, usefdr=True):
+def uvtcsq(indf, ingt, plvl=0.05, usefdr=True):
+    assert 1 > plvl > 0, 'plvl (significance level) should be 0.01, 0.05, or 0.1'
+
     import numpy
     import pandas
     from sklearn.feature_selection import chi2, SelectFdr, SelectFwe
 
-    if usefdr:    
-        FD = SelectFdr(score_func=chi2, alpha=t).fit(indf, ingt)
+    if usefdr:
+        FD = SelectFdr(score_func=chi2, alpha=plvl).fit(indf, ingt)
     else:
-        FD = SelectFwe(score_func=chi2, alpha=t).fit(indf, ingt)
+        FD = SelectFwe(score_func=chi2, alpha=plvl).fit(indf, ingt)
 
 # features selected (sklearn 1.0 or better)
 # FD.get_support(indices=False)  # t/f mask or ints
