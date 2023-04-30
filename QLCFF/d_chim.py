@@ -30,7 +30,10 @@ class ChiMerge(Discretizer):
         )
 
         self.significance_level = significance_level
-        self.mkbins = mkbins
+        if mkbins in ['sqrt', 'log', 'ten']:
+            self.mkbins = mkbins
+        else:
+            self.mkbins='ten'
 
 
     def _chi_score(self, intervals):
@@ -79,18 +82,10 @@ class ChiMerge(Discretizer):
         :return: List of cutpoints
         :        passthru feature_name
         '''
+        from .d_unif import nbins
 
         # max_cutpoints
-        n = len(np.unique(feature)) 
-
-        if self.mkbins == 'sqrt':
-            max_cutpoints = round(np.sqrt(n))
-
-        elif self.mkbins == 'log':
-            max_cutpoints = max(2, 2*(round(np.log10(n))))
-
-        else:
-            max_cutpoints = 10
+        max_cutpoints = nbins(feature, self.mkbins)
 
         feature_target = pd.concat([feature, target], axis=1)
         feature_target.sort_values(by=[feature.name], inplace=True)
@@ -112,7 +107,6 @@ class ChiMerge(Discretizer):
         while True:
             chi2_scores = list()
 
-            # TODO: need to define 'm' as user-defined, not 2
             # TODO: don't iterate, but keep them in matrix for one go
             for idx in range(len(intervals)-1):
                 chi2_scores.append(self._chi_score(
