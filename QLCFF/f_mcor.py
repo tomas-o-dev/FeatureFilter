@@ -67,14 +67,11 @@ def updatecmx(indf,cmx,i,j):
     col = item.columns
     row = item.index
     su = symm_uncert(indf[col[0]], indf[row[0]])
-#    cmx.iloc[j:(j+1), (i+1):(i+2)] = su
     return [i,j,su]
 
 
 def mksucm(dfin, numjobs= -2, msglvl=0):
     from joblib import Parallel, delayed
-#    parallel = Parallel(n_jobs=numjobs, verbose=msglvl)
-# the way to handle this type of nested loop is shared mem and reuse pool
 
     cmx = dfin.corr()
     pb='%'
@@ -105,14 +102,16 @@ def mksucm(dfin, numjobs= -2, msglvl=0):
 # requires pandas.dataframe, gt_labels
 # the standard threshold for multicolliniarity is > 0.7
 
-def mulcol(indf, ingt, t=0.7, su=False):
+def mulcol(indf, ingt, hipc=0.7, hisu=0.7, su=False):
 
 # create correlation matrix
 #----
     if su:
+        threshold = hisu
         print('Calculating the SU correlation matrix takes some time ...')
         corr_matrix = mksucm(indf, numjobs= -2, msglvl=0)  
     else:
+        threshold = hipc
         corr_matrix = indf.corr()
 #----
 # correlations > threshold
@@ -123,7 +122,7 @@ def mulcol(indf, ingt, t=0.7, su=False):
                 col = item.columns
                 row = item.index
                 val = abs(item.values)
-                if val >= t:
+                if val >= threshold:
                     dd=[col.values[0],row.values[0],round(val[0][0], 4)]
                     drop_cor.append(dd)
 
