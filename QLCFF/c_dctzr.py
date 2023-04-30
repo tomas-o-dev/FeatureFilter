@@ -24,7 +24,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         :n_jobs, verbose: joblib
         :return: self
         '''
-        from .d_unif import hgbins
+        from .d_nbhg import hgbins
 
         prebin_df, col_list = self._prep_df(X)
 
