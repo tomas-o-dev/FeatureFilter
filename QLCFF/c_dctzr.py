@@ -24,9 +24,10 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         :n_jobs, verbose: joblib
         :return: self
         '''
+        from .d_ppdf import prep_df
         from .d_nbhg import hgbins
 
-        prebin_df, col_list = self._prep_df(X)
+        prebin_df, col_list, lowuniq = prep_df(X)
 
         if isinstance(y, np.ndarray):
             sy = pd.Series(data=y, name='target')
@@ -38,11 +39,21 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
 
         self.cutpoints = self._prep_get_cutpoints(prebin_df, sy, col_list, numjobs, msglvl)
 
+# log10(32) and sqrt(7) are first to give num_bins > 2
+# TODO with refactoring - uv < 32 for log; uv < 7 for sqrt, ten 
+        print('\nUnique Values < 32 - Always binned with =hgrm=')
+        for feature_name in lowuniq:
+            print('\t',feature_name,':: Unique Values =',len(prebin_df[feature_name].unique()))
+            feature = prebin_df[feature_name].values
+            bin_edges = hgbins(feature)
+            cutpoints = bin_edges[1:-1].tolist()
+            self.cutpoints.update({feature_name: cutpoints})
+
         self.binned_df = X.copy()
         for feature_name, cutpoints in self.cutpoints.items():
             if len(cutpoints) < 2:
                 print('\nWARNING: No',self.mkbins,'cutpoints could be calculated for',feature_name)
-                print('           Falling back to mkbins=hgrm')
+                print('           Falling back to =hgrm=')
 
                 feature = X[feature_name].values
                 bin_edges = hgbins(feature)
@@ -104,53 +115,8 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
             for feature_name in col_list
         )
 
-        cutpoints_each_feature = {k: v for (k, v) in work}            
+        cutpoints_each_feature = {k: v for (k, v) in work} 
         return cutpoints_each_feature
-
-
-    def _prep_df(self, indf):
-        print('Using only numeric datatypes',end='')
-        dzdf = indf.select_dtypes(
-            include=['number','bool','boolean'],exclude=['timedelta64','complexfloating']).copy()
-
-        dxc=[]
-        dxc.extend(x for x in indf.columns.values if x not in dzdf.columns.values)
-        if len(dxc) > 0:
-            print('\nDropping ineligible features (text features should be one-hot encoded)')
-            for c in range(len(dxc)):
-                print('\t',dxc[c],' [ dtype =',indf.dtypes[dxc[c]].name,']')
-        else:
-            print(' [ All features are in ]')
-
-# all signed numbers
-        sn = dzdf.select_dtypes(
-            include=['signedinteger','floating'],exclude=['timedelta64']).columns.values                    
-        for c in range(len(sn)):
-            if dzdf[sn[c]].min() < 0:
-                dzdf[sn[c]] += abs(dzdf[sn[c]].min())
-
-# all pyTF columns
-        pytf = dzdf.select_dtypes(include=['bool','boolean']).columns.values
-        for c in range(len(pytf)):
-            dzdf[sn[c]] = dzdf[sn[c]].replace({True: 1, False: 0})
-
-# list of column names for get_cutpoints       
-        ftc=[]
-
-        lblenc = LabelEncoder()
-        for col in dzdf.columns:
-            uv = len(dzdf[col].unique())
-            if uv == 1:
-                print('WARNING: Dropping single-valued feature', dzdf[col].name)
-                dzdf.drop(dzdf[col].name, axis=1, inplace=True)
-            elif uv == 2: 
-                if (dzdf[col].min() != 0) or (dzdf[col].max() != 1):
-                    dzdf[col] = dzdf[col].replace({dzdf[col].max(): 1, dzdf[col].min(): 0})
-            else:
-                ftc.append(dzdf[col].name)                
-
-        dzdf.reset_index(inplace = True, drop = True)
-        return dzdf, ftc
 
 
 
