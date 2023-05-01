@@ -23,13 +23,11 @@ def hgbins(feature):
 def nbins(feature, mkbins):
     n = len(np.unique(feature)) 
 
+# floor() always rounds down, rint() rounds to the nearest even value ...
     if mkbins == 'sqrt':
-        bins = np.floor(np.sqrt(n)).astype(int)
+        bins = np.rint(np.sqrt(n)).astype(int)
     elif mkbins == 'log':
-        if feature.max() < (1+np.nextafter(1,1)):
-            bins = max(1, 2*(np.floor(np.log(n)).astype(int)))
-        else:
-            bins = max(1, 2*(np.floor(np.log10(n)).astype(int)))
+        bins = max(1, 2*(np.rint(np.log10(n)).astype(int)))
     else:
         bins = 10
 
