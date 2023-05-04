@@ -65,10 +65,10 @@ def filter_fcy(indf, ingt, minpc=0.1, minsu=0.01):
     return ydrop, ykeep
 
 
-def filter_fdr(dfin, gtin, t=0.01, usefdr=True):
+def filter_fdr(dfin, gtin, plvl=0.05, usefdr=True):
     from .f_uvfs import uvtcsq
 
-    highfdr=uvtcsq(dfin, gtin, t, usefdr)
+    highfdr=uvtcsq(dfin, gtin, plvl, usefdr)
     if len(highfdr) > 1:
         fdr_yc=get_ycor(highfdr, dfin, gtin)
     else:
@@ -77,10 +77,10 @@ def filter_fdr(dfin, gtin, t=0.01, usefdr=True):
     return fdr_yc     
 
 
-def filter_fcc(dfin, ingt, t=0.7, usesu=False):
+def filter_fcc(dfin, ingt, hipc=0.7, hisu=0.7, usesu=False):
     from .f_mcor import mulcol
 
-    dfdrop, proxies, hicorr, cormtx = mulcol(dfin, ingt, t, usesu)
+    dfdrop, proxies, hicorr, cormtx = mulcol(dfin, ingt, hipc, hisu, usesu)
     if len(dfdrop) > 1:
         fccd_yc=get_ycor(dfdrop, dfin, ingt)
         fccp_yc=get_ycor(proxies, dfin, ingt)
