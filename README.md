@@ -33,7 +33,7 @@ from QLCFF import get_filter, rpt_ycor, rpt_fcor
 # rpt_ycor: print feature-to-label (f2y) correlations 
 # rpt_fcor: print feature-to-feature (f2f) correlations
 ```
-Examples are in /QLCFFdemo/: .py and .ipynb
+Examples are in QLCF_docs .py and .ipynb
 
 Discretizers
 * unifhgm: uniform (np.linspace()) or histogram<br>
@@ -112,4 +112,4 @@ FCBF-Pearson and FCBF-SU layers use the same code, so be sure to use appropriate
   - f2y report for features to keep
   - f2f above threshold report
 
-Examples are in /QLCFFdemo/: .py and .ipynb
+Examples are in QLCF_docs .py and .ipynb
