@@ -1,43 +1,84 @@
 # FeatureFilter
 Quick Layered Correlation-based Feature Filtering
 
-General library requirements (Release 0.04):
-* Dataframe with only numeric columns
-* Numeric class labels in "array-like" with shape (n,1)
-* Binary classification (not multiclass or multilabel)"
-  
-Examples are in /QLCFFdemo/: .py and .ipynb
+General library requirements (Release 0.05):
+* Dataframe of features (text values may be one-hot encoded)
+* Class labels in np.ndarray or pd.Series with shape (n,1)
+* Binary classification (not multiclass or multilabel)
 
--- Use: --
+Workflow:
+1. Instantiate a discretizer
+2. Get the binned dataframe from the discretizer
+3. Apply filters to the binned dataset
+4. Apply drop (or keep) lists to the real features dataset
+
+Use: 
 ```
 # import the local library
 # add parent folder path where lib folder is
 import sys
 if ".." not in sys.path:import sys; sys.path.insert(0, '..') 
 
-## or ## from QLCFF import *
-# 
-from QLCFF import mkbins
+from QLCFF import unifhgm, MDLP, ChiMerge
+# three distinct discretizers can be instantiated
+
 from QLCFF import filter_fcy, filter_fdr, filter_fcc
+# filter_fcy: floor filter, feature-to-label (f2y) correlations  
+# filter_fdr: sklearn univariate chi-square test: FDR or FWE
+# filter_fcc: FCBF-style, filter on feature-to-feature (f2f) correlations
+#       using Pearson correlation (PC) or symmetric uncertainty (SU)
+
 from QLCFF import get_filter, rpt_ycor, rpt_fcor
+# get_filter: returns list of features from f2y report
+# rpt_ycor: print feature-to-label (f2y) correlations 
+# rpt_fcor: print feature-to-feature (f2f) correlations
+```
+Examples are in /QLCFFdemo/: .py and .ipynb
+
+Discretizers
+* unifhgm: uniform (np.linspace()) or histogram<br>
+  - Optional : 
+  - mkbins in `['ten','sqrt','log','hgrm']`<br>
+  default is `hgrm`: applies `np.histogram(feature, bins='auto')`
+* MDLP algorithm  [1]<br>
+  - Optional : 
+    - mkbins in `['ten','sqrt','log']`, 
+    - joblib processes, verbose level; defaults: `numjobs=1, msglvl=0` 
+* ChiMerge algorithm  [2]<br>
+  - Optional : 
+    - mkbins in `['ten','sqrt','log']`, 
+    - joblib processes, verbose level; defaults: `numjobs=1, msglvl=0` 
+* ten [3,4]:  number of bins is always ten - default for MDLP and ChiMerge
+* sqrt [5]: number of bins is `sqrt(len(np.unique(feature)))`
+* log [3]:  number of bins is `log10(len(np.unique(feature)))`
+```
+# IMPORTANT: instantiate, then call fit() or fit_transform()
+hgmb = unifhgm(mkbins='hgrm')
+
+# fit() calls the preprocessor and the discretizer
+# Requires:
+#    features as pd.dataframe, labels as array-like
+# Optional:
+#    print detailed report (boolean) - default False
+# preprocessor:
+#    1. selects only column dtypes np.number and pd or np boolean
+#    2. nomalizes all columns with signed dtypes to positive numbers
+#    3. nomalizes all columns with boolean dtypes to zero//one
+#    text labels are converted with sklearn LabelEncoder()
+hgmb.fit(features_test, labels_test,
+         detail=True)
+         
+# binned bataframe is an attribute
+X_hgmbinz = hgmb.binned_df
+#     transform() is just a getter method, with optional detail
+
+# detailed list of bin edges is an attribute
+hgmb.cutpoints
 ```
 
--- Functions --
+<br><br>===WIP===<br>
 
-`mkbins()`: applies sklearn KBinsDiscretizer(strategy='uniform', encode='ordinal')<br>
-https://scikit-learn.org/stable/modules/preprocessing.html#preprocessing-discretization
 
-R doc for `miMRMR` asserts 10 bins is consistent with the literature
-20 bins with uniform strategy means each bin is 5% of observed values
-   (ideally - it is really max_bins, uniform means all are the same size) 
-
-```
-### def mkbins(indf, nb=20, detail=False):
-# Requires: features dataframe
-#    nb =  maximum number of bins, default 20
-#    detail = print report, boolean, default False
-# Returns: binned (discretized) dataframe
-```
 
 `filter_fcy()`: naive filter, drop all with low feature-to-label (f2y) correlations
 
@@ -82,9 +123,5 @@ Features to keep are called "predominant features" in the FCBF paper; they act a
 #          f2f above threshold report 
 ```
 
-These functions process the return values of the filter_()<br>
-`get_filter()`: returns list of features from f2y report<br>
-`rpt_ycor()`: print feature-to-label (f2y) correlations<br> 
-`rpt_fcor()`: print feature-to-feature (f2f) correlations 
 
 Examples are in /QLCFFdemo/: .py and .ipynb
