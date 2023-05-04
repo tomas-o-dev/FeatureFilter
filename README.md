@@ -75,53 +75,41 @@ X_hgmbinz = hgmb.binned_df
 # detailed list of bin edges is an attribute
 hgmb.cutpoints
 ```
+Filters
+* floor filter `filter_fcy()` and univariate tests `filter_fdr()` both filter features on the basis that low correlation with the target labels means low utility for distinguishing class membership. 
+* chi_sq is a formal test for independence, `fwe` will select more to drop than `fdr`, and lower thresholds will also  select more to drop. The floor filter will select all from either univariate test, and more.
+* to create layered feature selection filters, apply one of these 3 before<br>
+`filter_fcc()` : FCBF-style, filter on feature-to-feature (f2f) correlations<br>using Pearson correlation (PC) or symmetric uncertainty (SU)
 
-<br><br>===WIP===<br>
+<br>`filter_fcy()` : floor filter, feature-to-label (f2y) correlations, drop<br>
+`if f2y_pc < minpc or f2y_su < minsu`
+* Requires: binned_df, numeric_labels
+* Optional:
+  - minpc : threshold for pearson correlation    default=0.1
+  - minsu : threshold for symmetric uncertainty  default=0.01 
+* Returns: 
+  - f2y report for features to drop
+  - f2y report for features to keep
 
+<br>`filter_fdr()` : sklearn univariate chi-square test: FDR or FWE
+* Requires: binned_df, numeric_labels
+* Optional:
+  - plvl : threshold (alpha) for chi_sq test  default=0.5<br>
+standard thresholds are 0.1, 0.05, 0.01; lower will select more to drop
+  - usefdr : boolean, fdr if True, else fwe   default=True
+* Returns: 
+  - f2y report for features to drop
 
-
-`filter_fcy()`: naive filter, drop all with low feature-to-label (f2y) correlations
-
-`filter_fdr()`: sklearn univariate chi-square test: FDR or FWE<br>
-https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection
-
-naive filter and univariate tests both filter features on the premise that
-low correlation with the target labels means low utility for distinguishing class membership
-
-chi_sq is a formal test for independence:<br>FWE will select more to drop than FDR; lower threshold will select more than higher<br>naive filter will select all from either univariate test, and more
-
-```
-### def filter_fcy(indf, ingt, minpc=0.1, minsu=0.01):
-# naive filter: keep if f2y_pc >= minpc or f2y_su >= minsu
-# Requires: features_df, numeric_labels
-#    minpc = threshold (alpha) for pearson correlation
-#    minsu = threshold (alpha) for symmetric uncertainty   
-# Returns: f2y report for features to drop
-```
-```
-### def filter_fdr(dfin, gtin, t=0.01, usefdr=True):
-# Requires: features_df, numeric_labels
-#    t = threshold (alpha) for chi_sq test, sklearn default is 0.5
-#    usefdr = test, boolean, fdr if True, else fwe  
-# Returns: f2y report for features to drop
-```
-`filter_fcc()`: FCBF-style, filter on feature-to-feature (f2f) correlations<br>
-using Pearson correlation (PC) or symmetric uncertainty (SU)
-
-FCBF-Pearson and FCBF-SU Layers use the same code, metric depends on the boolean argument: `usesu`<br>
-(just use appropriate names for the return values)
-
-Features to keep are called "predominant features" in the FCBF paper; they act as proxies for the highly correlated features to drop (see Lei Yu & Huan Liu, Proc. 20th ICML 2003)
-```
-### def filter_fcc(dfin, ingt, t=0.7, usesu=False):
-# Requires: features_df, numeric_labels
-#    t = threshold (alpha) for "high" f2f correlation
-#        standard for detecting multicollinearity is 0.7
-#    usesu = metric, boolean, su if True, else pearson 
-# Returns: f2y report for features to drop
-#          f2y report for features to keep
-#          f2f above threshold report 
-```
-
+<br>`filter_fcc()`: FCBF-style, filter on feature-to-feature (f2f) correlations<br>
+FCBF-Pearson and FCBF-SU layers use the same code, so be sure to use appropriate names for the return values
+* Requires: binned_df, numeric_labels
+* Optional:
+  - hipc : threshold for "high" f2f pearson correlation  default=0.7
+  - hisu : threshold for "high" f2f su correlation       default=0.7
+  - usesu : boolean, use su as metric if True, else pearson
+* Returns: 
+  - f2y report for features to drop
+  - f2y report for features to keep
+  - f2f above threshold report
 
 Examples are in /QLCFFdemo/: .py and .ipynb
