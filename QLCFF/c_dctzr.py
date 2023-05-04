@@ -14,9 +14,11 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
     def __init__(self, numjobs=1, msglvl=50):
 
         self.cutpoints = dict()
+        self.numjobs=numjobs
+        self.msglvl=msglvl
 
 
-    def fit(self, X, y, numjobs, msglvl, detail=False):
+    def fit(self, X, y, detail=False):
         '''
         Get cutpoints, then discretize each feature
         :param X: pd.DataFrame with features
@@ -37,7 +39,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         if sy.dtype == 'O':
             sy = pd.Series(data=LabelEncoder().fit_transform(sy),name=sy.name)
 
-        self.cutpoints = self._prep_get_cutpoints(prebin_df, sy, col_list, numjobs, msglvl)
+        self.cutpoints = self._prep_get_cutpoints(prebin_df, sy, col_list)
 
 # log10(32) and sqrt(7) are first to give num_bins > 2
 # TODO with refactoring - uv < 32 for log; uv < 7 for sqrt, ten 
@@ -49,7 +51,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
             cutpoints = bin_edges[1:-1].tolist()
             self.cutpoints.update({feature_name: cutpoints})
 
-        self.binned_df = X.copy()
+        self.binned_df = prebin_df.copy()
         for feature_name, cutpoints in self.cutpoints.items():
             if len(cutpoints) < 2:
                 print('\nWARNING: No',self.mkbins,'cutpoints could be calculated for',feature_name)
@@ -85,8 +87,8 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         return self.binned_df
 
 
-    def fit_transform(self, X, y, numjobs, msglvl, detail=False):
-        return self.fit(X, y, numjobs, msglvl).transform(X, detail=detail)
+    def fit_transform(self, X, y, detail=False):
+        return self.fit(X, y).transform(X, detail=detail)
 
 
     @abstractmethod
@@ -97,14 +99,14 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-    def _prep_get_cutpoints(self, features, target, col_list, numjobs, msglvl):
+    def _prep_get_cutpoints(self, features, target, col_list):
         '''
         Get cutpoints from every continuous feature
         :param features, col_list: pd.Dataframe as col_list
         :param target_: pd.Series with target
         :return: cutpoints for every continuous feature {feature name: List of cutpoints}
         '''
-        parallel = Parallel(n_jobs=numjobs, verbose=msglvl)
+        parallel = Parallel(n_jobs=self.numjobs, verbose=self.msglvl)
 
         work = parallel( 
             delayed(self._get_cutpoints)(
