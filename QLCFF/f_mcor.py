@@ -102,11 +102,11 @@ def mksucm(dfin, numjobs= -2, msglvl=0):
 # requires pandas.dataframe, gt_labels
 # the standard threshold for multicolliniarity is > 0.7
 
-def mulcol(indf, ingt, hipc=0.7, hisu=0.7, su=False):
+def mulcol(indf, ingt, hipc=0.7, hisu=0.7, usesu=False):
 
 # create correlation matrix
 #----
-    if su:
+    if usesu:
         threshold = hisu
         print('Calculating the SU correlation matrix takes some time ...')
         corr_matrix = mksucm(indf, numjobs= -2, msglvl=0)  
@@ -194,7 +194,7 @@ def mulcol(indf, ingt, hipc=0.7, hisu=0.7, su=False):
         ctgt = tgt
         vcf = indf[tgt].values
 
-        if su:
+        if usesu:
             bc=symm_uncert(vcf, ingt)
         else:
             bc = abs(numpy.corrcoef(vcf, ingt)[0,1])
@@ -204,7 +204,7 @@ def mulcol(indf, ingt, hipc=0.7, hisu=0.7, su=False):
             if (tgf[p] not in keepp) and (tgf[p] not in dropc):
                 vcf = indf[tgf[p]].values
 
-                if su:
+                if usesu:
                     cwt=symm_uncert(vcf, ingt)
                 else:
                     cwt = abs(numpy.corrcoef(vcf, ingt)[0,1])
