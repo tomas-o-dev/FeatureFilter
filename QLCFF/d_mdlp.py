@@ -126,8 +126,8 @@ class MDLP(Discretizer):
 
         Discretizer.__init__(
             self=self,
-            numjobs=1,
-            msglvl=0
+            numjobs=numjobs,
+            msglvl=msglvl
         )
 
         self.base = base
