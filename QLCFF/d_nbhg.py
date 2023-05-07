@@ -1,9 +1,5 @@
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Dict, Any
-
-from .c_dctzr import Discretizer
-
 
 def hgbins(feature):
     bnz, egz = np.histogram(feature, bins='auto')
@@ -20,13 +16,14 @@ def hgbins(feature):
     return edges
 
 
-def nbins(feature, mkbins):
+def nbins(feature, nb):
     n = len(np.unique(feature)) 
 
-# floor() always rounds down, rint() rounds to the nearest even value ...
-    if mkbins == 'sqrt':
+#   floor() always rounds down, 
+#           rint() rounds 0.5 to the nearest even value ...
+    if nb == 'sqrt':
         bins = np.rint(np.sqrt(n)).astype(int)
-    elif mkbins == 'log':
+    elif nb == 'log':
         bins = max(1, 2*(np.rint(np.log10(n)).astype(int)))
     else:
         bins = 10
@@ -34,30 +31,12 @@ def nbins(feature, mkbins):
     return bins
 
 
-
-# thanks to : https://github.com/Anylee2142/
-
-class unifhgm(Discretizer):
-    def __init__(self, mkbins='hgrm', numjobs=1, msglvl=0):
-
-        Discretizer.__init__(
-            self=self,
-            numjobs=1,
-            msglvl=0
-        )
-
-        if mkbins in ['sqrt', 'log', 'ten', 'hgrm']:
-            self.mkbins = mkbins
-        else:
-            self.mkbins='hgrm'
-
-
-    def _get_cutpoints(self, feature, target, feature_name):
-        '''
-        Get cutpoints from one continuous feature
+def get_cutpoints(nbinz, feature, target, feature_name):
+    '''
+    Get cutpoints from one continuous feature
         :param feature: continuous column to be discretized
         :param target: target column considered
-        :param mkbins: 'ten' [1],[2]; 'log' [1]; 'sqrt' [3], 'auto' [4]
+        :param nbinz: 'ten' [1],[2]; 'log' [1]; 'sqrt' [3], 'auto' [4]
 
     [1] J. Dougherty, R. Kohavi, and M. Sahami, “Supervised and unsupervised
     discretization of continuous features,” in ICML 1995, pp. 194–202
@@ -69,11 +48,11 @@ class unifhgm(Discretizer):
 
         :return: List of cutpoints
         :        passthru feature_name
-        '''
-        if self.mkbins == 'hgrm':
-            bin_edges = hgbins(feature)
-        else:
-            numbins = nbins(feature, self.mkbins)
-            bin_edges = np.linspace(feature.min(), feature.max(), numbins + 1)
+    '''
+    if nbinz in ['ten', 'log', 'sqrt']:
+        numbins = nbins(feature, nbinz)
+        bin_edges = np.linspace(feature.min(), feature.max(), numbins + 1)
+    else:
+        bin_edges = hgbins(feature)
 
-        return feature_name, bin_edges[1:-1].tolist()
+    return feature_name, bin_edges[1:-1].tolist()
