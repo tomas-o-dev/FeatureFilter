@@ -4,8 +4,8 @@
 # https://github.com/ctlab/ITMO_FS/blob/master/ITMO_FS/utils/information_theory.py
 # ITMO implementations are nice, use np.apply_along_axis()
 
-import numpy
-import pandas 
+import numpy as np
+import pandas as pd
 
 from collections import Counter  #https://www.guru99.com/python-counter-collections-example.html#5
 from operator import itemgetter  
@@ -57,7 +57,7 @@ def symm_uncert(x, y):
     if (entropy_x != 0) or (entropy_y != 0):
         suv = 2 * ((entropy_x - conditional_entropy(y, x)) / (entropy_x + entropy_y))
     else:
-        suv = numpy.nextafter(0, 1)
+        suv = np.nextafter(0, 1)
     return suv
 
 
@@ -197,7 +197,7 @@ def mulcol(indf, ingt, hipc=0.7, hisu=0.7, usesu=False):
         if usesu:
             bc=symm_uncert(vcf, ingt)
         else:
-            bc = abs(numpy.corrcoef(vcf, ingt)[0,1])
+            bc = abs(np.corrcoef(vcf, ingt)[0,1])
                 
 ### swap highest into tgt
         for p in range(len(tgf)):
@@ -207,7 +207,7 @@ def mulcol(indf, ingt, hipc=0.7, hisu=0.7, usesu=False):
                 if usesu:
                     cwt=symm_uncert(vcf, ingt)
                 else:
-                    cwt = abs(numpy.corrcoef(vcf, ingt)[0,1])
+                    cwt = abs(np.corrcoef(vcf, ingt)[0,1])
 
                 if cwt > bc:
                     ctgt = tgf[p]
@@ -270,9 +270,9 @@ def mulcol(indf, ingt, hipc=0.7, hisu=0.7, usesu=False):
         v2c=corr1[i][1]
 
         vals1=indf[v1c].values
-        cowt1 = numpy.corrcoef(vals1,ingt)[0,1]
+        cowt1 = np.corrcoef(vals1,ingt)[0,1]
         vals2=indf[v2c].values
-        cowt2 = numpy.corrcoef(vals2,ingt)[0,1]
+        cowt2 = np.corrcoef(vals2,ingt)[0,1]
 
         if (abs(cowt1) > abs(cowt2)):
             keep1.append(v1c)
