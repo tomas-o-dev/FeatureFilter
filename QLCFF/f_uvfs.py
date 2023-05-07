@@ -27,16 +27,16 @@ def uvtcsq(indf, ingt, plvl=0.05, usefdr=True):
 # FD.get_support(indices=False)  # t/f mask or ints
 # FD.get_feature_names_out()     # names
 
-    todrop = []
+    fdrd = []
     try:
-        fdd=FD.get_feature_names_out() 
+        fdrk=FD.get_feature_names_out() 
     except:
-        print('No features selected')
+        fdrk=[]
     else:
         dfc=indf.columns.values
         for p in range(len(dfc)):
-            if dfc[p] not in fdd:
-                todrop.append(dfc[p])
+            if dfc[p] not in fdrk:
+                fdrd.append(dfc[p])
             
-    return todrop        
+    return fdrd,fdrk        
 
