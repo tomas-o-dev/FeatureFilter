@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Tuple, List, Dict
 
-from .c_dctzr import Discretizer
+##from .c_dctzr import Discretizer
 
 # fork of: https://github.com/Anylee2142/MDLP
 
@@ -28,7 +28,7 @@ def ent(vector: pd.Series, base=2) -> float:
     return -np.sum(log_(v=pi, base=base) * pi)
 
 
-def get_subset(feature: pd.Series, T: float, target: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Series] or None:
+def get_subset(feature, T, target) -> Tuple[pd.Series, pd.Series, pd.Series] or None:
     '''
     Divides S into S1, S2 according to T
     :param feature: continuous column
@@ -120,115 +120,108 @@ def N_1(feature, base=2) -> float:
     return log_(v=N-1, base=base) / N
 
 
-class MDLP(Discretizer):
-    def __init__(self, base=2, mkbins='ten', numjobs=1, msglvl=50):
-        assert 1 < base < 11, 'base for log should be 2 or 10'
-
-        Discretizer.__init__(
-            self=self,
-            numjobs=numjobs,
-            msglvl=msglvl
-        )
-
-        self.base = base
-        if mkbins in ['sqrt', 'log', 'ten']:
-            self.mkbins = mkbins
-        else:
-            self.mkbins='ten'
+##class MDLP(Discretizer):
+##    def __init__(self, mkbins='ten', numjobs=1, msglvl=50, base=2):
+##        assert 1 < base < 11, 'base for log should be 2 or 10'
 
 
-    def _find_best_cutpoint(self, feature, possible_cutpoints, target):
-        '''
+def find_best_cutpoint(feature, possible_cutpoints, target):
+    '''
         Find best cutpoint that minimize E and satisfy mdlp criterion
         :param feature: continuous column
         :param possible_cutpoints: every possible cutpoint
         :param target: target column
         :return:
-            1. best_cutpoint = best threshold (cutpoint) minimizing E, and satisfy mdlp condition
-            2. first_subrange = S1 or S2 that has more samples. None if no more search
-            3. second_subrange = S1 or S2 that has less samples. None if no more search
-        '''
-        if len(feature) == 0 or len(target) == 0:
-            return None, None, None
+        1. best_cutpoint = best threshold (cutpoint) minimizing E, and satisfy mdlp condition
+        2. first_subrange = S1 or S2 that has more samples. None if no more search
+        3. second_subrange = S1 or S2 that has less samples. None if no more search
+    '''
+    if len(feature) == 0 or len(target) == 0:
+        return None, None, None
 
-        best_cutpoint = -1
-        best_entropy = np.inf
+    best_cutpoint = -1
+    best_entropy = np.inf
+##
+    base = 2
+##
+    n_1 = N_1(feature, base=base)
+#    n_1 = N_1(feature, base=self.base)
+##
+    for T in possible_cutpoints:
+        # TODO: implement below with pd.apply or map
+        curr_entropy = E(feature, T, target)
+        # To be cutpoint,
+        # 1. it should minimize class entropy
+        if best_entropy > curr_entropy:
+            best_entropy = curr_entropy
+            best_cutpoint = T
 
-        n_1 = N_1(feature, base=self.base)
+    # 2. and pass mdlp criterion
+##
+#    if Gain(feature, best_cutpoint, target, self.base) <= n_1 + delta(feature, best_cutpoint, target, self.base):
+    if Gain(feature, best_cutpoint, target, base) <= n_1 + delta(feature, best_cutpoint, target, base):
+        return None, None ,None
+##
+    result = get_subset(feature, best_cutpoint, target)
 
-        for T in possible_cutpoints:
-            # TODO: implement below with pd.apply or map
-            curr_entropy = E(feature, T, target)
-            # To be cutpoint,
-            # 1. it should minimize class entropy
-            if best_entropy > curr_entropy:
-                best_entropy = curr_entropy
-                best_cutpoint = T
+    if result is None:
+        return None, None, None
 
-        # 2. and pass mdlp criterion
-        if Gain(feature, best_cutpoint, target, self.base) <= n_1 + delta(feature, best_cutpoint, target, self.base):
-            return None, None ,None
+    _, S1_target, S2_target = result
+    S1_feature = feature[S1_target.index]
+    S2_feature = feature[S2_target.index]
 
-        result = get_subset(feature, best_cutpoint, target)
+    first_subrange = (S1_feature, S1_target) if len(S1_target) > len(S2_target) else (S2_feature, S2_target)
+    second_subrange = (S2_feature, S2_target) if len(S1_target) > len(S2_target) else (S1_feature, S1_target)
 
-        if result is None:
-            return None, None, None
-
-        _, S1_target, S2_target = result
-        S1_feature = feature[S1_target.index]
-        S2_feature = feature[S2_target.index]
-
-        first_subrange = (S1_feature, S1_target) if len(S1_target) > len(S2_target) else (S2_feature, S2_target)
-        second_subrange = (S2_feature, S2_target) if len(S1_target) > len(S2_target) else (S1_feature, S1_target)
-
-        return best_cutpoint, first_subrange, second_subrange
+    return best_cutpoint, first_subrange, second_subrange
 
 
-    def _get_possible_cutpoints(self, feature):
-        '''
+def get_possible_cutpoints(feature):
+    '''
         Get boundaries from given feature
         :param feature: continuous feature
         :return: possible cutpoints
-        '''
-        uniques = feature.unique()
-        mid_cutpoints = []
-        for i in range(len(uniques[:-1])):
-            mid_point = (uniques[i] + uniques[i + 1]) / 2
-            mid_cutpoints.append(mid_point)
-        return mid_cutpoints
+    '''
+    uniques = feature.unique()
+    mid_cutpoints = []
+    for i in range(len(uniques[:-1])):
+        mid_point = (uniques[i] + uniques[i + 1]) / 2
+        mid_cutpoints.append(mid_point)
+    return mid_cutpoints
 
 
-    def _get_cutpoints(self, feature, target, feature_name):
-        '''
+def get_cutpoints(nbinz, feature, target, feature_name):
+    '''
         get mdlp cutpoints from one continuous feature
         :param feature: continuous column to be discretized
         :param target: target column considered 
         :return: List of cutpoints
         :        passthru feature_name
-        '''
-        from .d_nbhg import nbins
+    '''
+    from .d_nbhg import nbins
 
-        cutpoints = []
-        sorted_feature = feature.sort_values()
-        sorted_target = target[sorted_feature.index]
-        subranges = [(sorted_feature, sorted_target)]
+    cutpoints = []
+    sorted_feature = feature.sort_values()
+    sorted_target = target[sorted_feature.index]
+    subranges = [(sorted_feature, sorted_target)]
 
-        # max_cutpoints
-        num_iter = nbins(feature, self.mkbins)
+    # max_cutpoints
+    num_iter = nbins(feature, nbinz)
 
-        while num_iter > 0 and subranges:
-            feature, target = subranges.pop(0)
-            # possible cutpoint should be middle point of adjacent two values, not itself
-            possible_cutpoints = self._get_possible_cutpoints(feature)
+    while num_iter > 0 and subranges:
+        feature, target = subranges.pop(0)
+        # possible cutpoint should be middle point of adjacent two values, not itself
+        possible_cutpoints = get_possible_cutpoints(feature)
 
-            best_cutpoint, first_subrange, second_subrange = self._find_best_cutpoint(feature, possible_cutpoints, target)
+        best_cutpoint, first_subrange, second_subrange = find_best_cutpoint(feature, possible_cutpoints, target)
 
-            cutpoints.append(best_cutpoint)
-            if first_subrange is not None and second_subrange is not None:
-                subranges.append(first_subrange)
-                subranges.append(second_subrange)
-            num_iter -= 1
+        cutpoints.append(best_cutpoint)
+        if first_subrange is not None and second_subrange is not None:
+            subranges.append(first_subrange)
+            subranges.append(second_subrange)
+        num_iter -= 1
 
-        cutpoints = list(filter(lambda elem: elem != None, cutpoints))
-        cutpoints.sort()
-        return feature_name, cutpoints
+    cutpoints = list(filter(lambda elem: elem != None, cutpoints))
+    cutpoints.sort()
+    return feature_name, cutpoints
