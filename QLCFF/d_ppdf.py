@@ -32,7 +32,8 @@ def prep_df(indf):
 
 
 # list of column names for only histogram
-    hgc=[]
+    hgs=[]
+    hgl=[]
 
 # list of column names for get_cutpoints
     ftc=[]
@@ -45,10 +46,12 @@ def prep_df(indf):
         elif uv == 2: 
             if (dzdf[col].min() != 0) or (dzdf[col].max() != 1):
                 dzdf[col] = dzdf[col].replace({dzdf[col].max(): 1, dzdf[col].min(): 0})
-        elif (uv > 2) and (uv < 32):        # log10(32) is first to give numbins>2
-            hgc.append(dzdf[col].name)
+        elif (uv > 2) and (uv < 7):        # sqrt(7) is first to give num_bins > 2
+            hgs.append(dzdf[col].name)
+        elif (uv > 6) and (uv < 32):       # log10(32) is first to give numbins>2
+            hgl.append(dzdf[col].name)
         else:
             ftc.append(dzdf[col].name)                
 
     dzdf.reset_index(inplace = True, drop = True)
-    return dzdf, ftc, hgc
+    return dzdf, ftc, hgs, hgl
