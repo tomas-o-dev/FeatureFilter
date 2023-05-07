@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 
 # only internal: get_ycor,get_fcor
 from .f_mcor import mutual_info, symm_uncert 
@@ -10,10 +10,10 @@ from .f_mcor import mutual_info, symm_uncert
 def get_ycor(flist, indf, ingt):
     ctbl=[]
     for f in range(len(flist)):
-        arr=numpy.array(indf[flist[f]])
+        arr=np.array(indf[flist[f]])
         mi=mutual_info(arr, ingt)  
         su=symm_uncert(arr, ingt)
-        bc = numpy.corrcoef(arr, ingt)[0,1]
+        bc = np.corrcoef(arr, ingt)[0,1]
         
         tmp=[flist[f],round(bc,4),round(su,4),round(mi,4)]
         if tmp not in ctbl:
@@ -28,8 +28,8 @@ def get_fcor(hicorr,indf,corrmtx,sucmx):
 
     ctbl=[]
     for x in range(len(hicorr)):
-        arr=numpy.array(indf[hicorr[x][0]])
-        brr=numpy.array(indf[hicorr[x][1]])
+        arr=np.array(indf[hicorr[x][0]])
+        brr=np.array(indf[hicorr[x][1]])
 
         pcc = corrmtx.loc[hicorr[x][0],hicorr[x][1]]
         if sucmx:
@@ -68,13 +68,14 @@ def filter_fcy(indf, ingt, minpc=0.1, minsu=0.01):
 def filter_fdr(dfin, gtin, plvl=0.05, usefdr=True):
     from .f_uvfs import uvtcsq
 
-    highfdr=uvtcsq(dfin, gtin, plvl, usefdr)
-    if len(highfdr) > 1:
-        fdr_yc=get_ycor(highfdr, dfin, gtin)
+    uvd,uvk=uvtcsq(dfin, gtin, plvl, usefdr)
+    if len(uvd) > 1:
+        uvd_yc=get_ycor(uvd, dfin, gtin)
+        uvk_yc=get_ycor(uvk, dfin, gtin)
     else:
-        fdr_yc=highfdr
+        uvd_yc=[]
         
-    return fdr_yc     
+    return uvd_yc, uvk_yc     
 
 
 def filter_fcc(dfin, ingt, hipc=0.7, hisu=0.7, usesu=False):
@@ -86,9 +87,9 @@ def filter_fcc(dfin, ingt, hipc=0.7, hisu=0.7, usesu=False):
         fccp_yc=get_ycor(proxies, dfin, ingt)
         fcc_fxc=get_fcor(hicorr, dfin, cormtx, usesu)
     else:
-        fccd_yc=dfdrop
-        fccp_yc=dfdrop
-        fcc_fxc=dfdrop
+        fccd_yc=[]
+        fccp_yc=[]
+        fcc_fxc=[]
 
     return fccd_yc, fccp_yc, fcc_fxc     
 
