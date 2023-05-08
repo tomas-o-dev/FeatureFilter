@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 
 def hgbins(feature):
-    bnz, egz = np.histogram(feature, bins='auto')
+    bnz, egz = np.histogram(feature, bins='doane')
     egz = egz[np.nonzero(bnz)]
     if feature.min != 0:
         egz[0:1] = 0
 
-    while (len(egz) /2) > 8:
+    while (len(egz) /2) > 6:
         egz[1::2] = [0]*(len(egz)//2)
         egz = egz[np.nonzero(egz)]
         egz = np.insert(egz, 0, 0)
@@ -17,7 +17,7 @@ def hgbins(feature):
 
 
 def nbins(feature, nb):
-    n = len(np.unique(feature)) 
+    n = len(feature) 
 
 #   floor() always rounds down, 
 #           rint() rounds 0.5 to the nearest even value ...
