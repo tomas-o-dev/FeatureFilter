@@ -3,25 +3,10 @@ import pandas as pd
 from typing import Tuple, List, Dict, Any
 from scipy.stats import chi2
 
-## from .c_dctzr import Discretizer
-
-# fork of: https://github.com/Anylee2142/ChiMerge
+## fork of: https://github.com/Anylee2142/ChiMerge
 
 # Kerber R. 1992. Chimerge: Discretization of numeric attributes. 
 # Proc. 10th National Conference on Artifcial Intelligence (AAAI'92), 123–128
-
-# ChiMerge Algorithm
-# 1. sorting continuous features
-# 2. make each example as one interval
-# 3. compute chi2 value for every pair of adjacent two intervals
-# 4. merge certain pair of intervals that have lowest chi2 value
-# 5. go 3 until chi2 values from all pairs exceed threshold of 
-#    pre-defined significance level (until all alternative hypothesises become passed)
-
-## class ChiMerge(Discretizer):
-##    def __init__(self, mkbins='chim-ten', numjobs=1, msglvl=50, plvl=0.1):
-##        assert 1 > plvl > 0, 'plvl (significance level) should be 0.01, 0.05, or 0.1'
-
 
 
 def chi_score(intervals):
@@ -89,11 +74,12 @@ def get_cutpoints(nbinz, feature, target, feature_name):
     intervals = [unique_value[1] for unique_value in frequencies.iterrows()]
 
     num_of_classes = len(target.unique())
-##
-#    chi2_threshold = chi2.ppf(1 - self.plvl, num_of_classes - 1)
+
+## standard thresholds are 0.1, 0.05, 0.01
+## no need to change
     plvl=0.1
     chi2_threshold = chi2.ppf(1 - plvl, num_of_classes - 1)
-##
+
     mode = False
     while True:
         chi2_scores = list()
