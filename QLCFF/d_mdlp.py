@@ -2,13 +2,15 @@ import numpy as np
 import pandas as pd
 from typing import Tuple, List, Dict
 
-##from .c_dctzr import Discretizer
-
-# fork of: https://github.com/Anylee2142/MDLP
+## fork of: https://github.com/Anylee2142/MDLP
 
 # Fayyad, U. M., and Irani, K. B. 1993. Multiinterval discretization of 
 # continuous-valued attributes for classifcation learning. 
 # Proc. 13th Int. Joint Conference on Artifcial Intelligence, 1022-1027.
+# from the paper ---
+# "When the logarithm base is 2, Ent(S) measures the amount of information 
+#  needed, in bits, to specify the classes in S." 
+# This must not be changed - See theorem 2 
 
 
 def log_(v, base=2) -> float:
@@ -120,11 +122,6 @@ def N_1(feature, base=2) -> float:
     return log_(v=N-1, base=base) / N
 
 
-##class MDLP(Discretizer):
-##    def __init__(self, mkbins='ten', numjobs=1, msglvl=50, base=2):
-##        assert 1 < base < 11, 'base for log should be 2 or 10'
-
-
 def find_best_cutpoint(feature, possible_cutpoints, target):
     '''
         Find best cutpoint that minimize E and satisfy mdlp criterion
@@ -139,14 +136,12 @@ def find_best_cutpoint(feature, possible_cutpoints, target):
     if len(feature) == 0 or len(target) == 0:
         return None, None, None
 
+    base = 2
     best_cutpoint = -1
     best_entropy = np.inf
-##
-    base = 2
-##
+
     n_1 = N_1(feature, base=base)
-#    n_1 = N_1(feature, base=self.base)
-##
+
     for T in possible_cutpoints:
         # TODO: implement below with pd.apply or map
         curr_entropy = E(feature, T, target)
@@ -157,11 +152,9 @@ def find_best_cutpoint(feature, possible_cutpoints, target):
             best_cutpoint = T
 
     # 2. and pass mdlp criterion
-##
-#    if Gain(feature, best_cutpoint, target, self.base) <= n_1 + delta(feature, best_cutpoint, target, self.base):
     if Gain(feature, best_cutpoint, target, base) <= n_1 + delta(feature, best_cutpoint, target, base):
         return None, None ,None
-##
+
     result = get_subset(feature, best_cutpoint, target)
 
     if result is None:
