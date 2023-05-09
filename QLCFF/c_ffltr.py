@@ -226,8 +226,8 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
 
     def fit_transform(self, X, y, filters, trudf, 
                       plvl=0.5, 
-                      minpc=0.1, minsu=0.01, 
-                      hipc=0.7, hisu=0.7):
+                      minpc=0.035, minsu=0.0025, 
+                      hipc=0.82, hisu=0.7):
         return self.fit(X, y, filters, 
                    plvl=plvl, 
                    minpc=minpc, minsu=minsu, 
