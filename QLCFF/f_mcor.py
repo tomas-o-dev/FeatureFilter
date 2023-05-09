@@ -101,8 +101,9 @@ def mksucm(dfin, numjobs= -2, msglvl=0):
 ## call this --
 # requires pandas.dataframe, gt_labels
 # the standard threshold for multicolliniarity is > 0.7
+#     experiments show PC can go a bit higher
 
-def mulcol(indf, ingt, hipc=0.7, hisu=0.7, usesu=False):
+def mulcol(indf, ingt, hipc=0.82, hisu=0.7, usesu=False):
 
 # create correlation matrix
 #----
