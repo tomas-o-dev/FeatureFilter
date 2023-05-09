@@ -107,7 +107,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
 
 ##  --  --  --  --  ##
 
-    def fit_transform(X, y, mkbins='unif-10', detail=False):
+    def fit_transform(self, X, y, mkbins='unif-10', detail=False):
         return self.fit(X, y).transform(mkbins, detail)
 
 ##  --  --  --  --  ##
