@@ -11,7 +11,7 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
     def __init__(self):
         init = True
 
-    def fit(self, X, y, filters, plvl=0.5, minpc=0.1, minsu=0.01, hipc=0.7, hisu=0.7):
+    def fit(self, X, y, filters, plvl=0.5, minpc=0.035, minsu=0.0025, hipc=0.82, hisu=0.7):
         '''
         :param X: binned pd.DataFrame with features
         :param y: target labels
@@ -19,12 +19,12 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
                processed in order with progressive filtering
         optionals
             Floor: 
-                minpc : threshold for pearson correlation    default=0.1
-                minsu : threshold for symmetric uncertainty  default=0.01 
+                minpc : threshold for pearson correlation    default=0.035
+                minsu : threshold for symmetric uncertainty  default=0.0025 
             FDR, FWE: 
                 plvl : threshold (alpha) for chi_sq test  default=0.5
             FCBF-SU, FCBF-PC:
-                hipc : threshold for "high" f2f pearson correlation  default=0.7
+                hipc : threshold for "high" f2f pearson correlation  default=0.82
                 hisu : threshold for "high" f2f su correlation       default=0.7
         :return: self
         '''
@@ -149,7 +149,7 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
 
 #feature-to-label (f2y) correlations 
 
-    def get_f2y_report(self, filters, kd='drop'):
+    def get_f2y_report(self, kd='drop'):
         from .f_rpts import rpt_ycor
 
         if kd == 'keep':
@@ -171,15 +171,13 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
 
 #feature to feature (f2f) correlations above threshold report
 
-    def get_f2f_report(self, filters):
+    def get_f2f_report(self):
         from .f_rpts import rpt_fcor
         print('Only available for FCBF-SU and FCBF-PC')
 
-        for f in range(len(filters)):
-            filtr = filters[f]
- 
-            if filtr not in self.flist:
-                continue
+        for f in range(len(self.flist)):
+            filtr = self.flist[f]
+
             if filtr not in ['FCBF-SU', 'FCBF-PC']:
                 continue
 
@@ -192,13 +190,11 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
                 rpt_fcor(self.pcff)
 
 
-    def get_f2f_dict(self, filters):
+    def get_f2f_dict(self):
         hcfd = dict()
-        for f in range(len(filters)):
-            filtr = filters[f]
- 
-            if filtr not in self.flist:
-                continue
+        for f in range(len(self.flist)):
+            filtr = self.flist[f]
+
             if filtr not in ['FCBF-SU', 'FCBF-PC']:
                 continue
 
