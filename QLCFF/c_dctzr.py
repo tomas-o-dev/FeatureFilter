@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 
 
 class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
-    def __init__(self, numjobs=1, msglvl=50):
+    def __init__(self, numjobs= -2, msglvl=5):
 
         self.cutpoints = dict()
         self.numjobs=numjobs
@@ -43,7 +43,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         return self
 
 
-    def transform(self, mkbins='unif-ten', detail=False):
+    def transform(self, mkbins='hgrm', detail=False):
         '''
         Get cutpoints, then discretize each feature
         :detail: report outcome of binning
@@ -107,7 +107,7 @@ class Discretizer(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
 
 ##  --  --  --  --  ##
 
-    def fit_transform(self, X, y, mkbins='unif-10', detail=False):
+    def fit_transform(self, X, y, mkbins='hgrm', detail=False):
         return self.fit(X, y).transform(mkbins, detail)
 
 ##  --  --  --  --  ##
