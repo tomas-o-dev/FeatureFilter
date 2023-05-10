@@ -1,5 +1,5 @@
 # FeatureFilter
-Quick Layered Correlation-based Feature Filtering
+#### Quick Layered Correlation-based Feature Filtering
 
 General library requirements (Release 1.0):
 * Dataframe of features (text values may be one-hot encoded)
@@ -10,31 +10,24 @@ Workflow:
 Correlation-based feature filtering has four steps: preprocessing, 
 discretization, calculating correlations, and feature reduction.
 
-Here the first two steps are implemented in the Discretizer class, 
-and the second two steps in the qlcfFilter class. Discretizer and 
-qlcfFilter work SciKit-Learn style (instantiate, fit, transform) 
+Here the first two steps are implemented in the ` Discretizer ` class, 
+and the second two steps in the ` qlcfFilter ` class. 
+They work SciKit-Learn style (instantiate, fit, transform) 
 and can be used in a pipeline.
 
 #### Quick Start: 
 ```
 # import the local library:
 # add parent folder path where lib folder is
-
 import sys
 if ".." not in sys.path:import sys; sys.path.insert(0, '..') 
 
 from QLCFF import Discretizer, qlcfFilter
 
-dzdf = Discretizer(numjobs= -2, msglvl=5).fit_transform(features_train, 
-                                                        labels_train, 
-                                                        mkbins='mdlp-log', 
-                                                        detail=True)
+dzdf = Discretizer().fit_transform(features_train, labels_train) 
 
 fltrs = ['FDR', 'FWE', 'FCBF-PC']
-ffdf = qlcfFilter().fit_transform(dzdf, 
-                                  labels_train, 
-                                  fltrs, 
-                                  features_train)
+ffdf = qlcfFilter().fit_transform(dzdf, labels_train, fltrs, features_train)
 ```
 Examples are in QLCF_docs .py and .ipynb
 
