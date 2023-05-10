@@ -27,7 +27,8 @@ from QLCFF import Discretizer, qlcfFilter
 dzdf = Discretizer().fit_transform(features_train, labels_train) 
 
 fltrs = ['FDR', 'FWE', 'FCBF-PC']
-ffdf = qlcfFilter().fit_transform(dzdf, labels_train, fltrs, features_train)
+ffdf = qlcfFilter().fit_transform(dzdf, labels_train, 
+                                  fltrs, features_train)
 ```
 Examples are in QLCF_docs .py and .ipynb
 
@@ -92,7 +93,7 @@ Examples are in QLCF_docs .py and .ipynb
     - ` 'FDR', 'FWE' `: sklearn univariate chi-square test; selects features to keep based on an upper bound on the expected false discovery rate. ` fwe ` will select more to drop than ` fdr `, and lower thresholds will also select more to drop. The floor filter will select all from either univariate test, and more.
       - Optional : 
         - ` plvl ` : chi-square threshold (alpha), standard values are 0.01, 0.05, 0.1
-    - ` 'FCBF-SU', 'FCBF-PC' `: FCBF-style, filter on feature-to-feature (f2f) correlations. Given a group of features with high cross-correlations, keep the one with the highest (f2y) as a proxy for the others (FCBF paper calls this the "dominant feature". The standard threshold for multicolliniarity is > 0.7, the defaults were selected through experimentation. 
+    - ` 'FCBF-SU', 'FCBF-PC' `: FCBF-style, filter on feature-to-feature (f2f) correlations. Given a group of features with high cross-correlations, keep the one with the highest (f2y) as a proxy for the others (FCBF paper [6] calls this the "dominant feature"). The standard threshold for multicolliniarity is > 0.7, the defaults were selected through experimentation. 
       - Optional : 
         - ` hipc ` : threshold for "high" f2f pearson correlation
         - ` hisu ` : threshold for "high" f2f symmetric uncertainty 
@@ -116,3 +117,21 @@ Examples are in QLCF_docs .py and .ipynb
 
 Examples are in QLCF_docs .py and .ipynb
     
+[1] Fayyad, U. M., and Irani, K. B. (1993). "Multiinterval discretization of 
+    continuous-valued attributes for classifcation learning", Proc. 13th 
+    Int. Joint Conference on Artifcial Intelligence, pp. 1022-1027
+
+[2] Kerber R. (1992). "Chimerge: Discretization of numeric attributes", 
+    Proc. 10th National Conference on Artifcial Intelligence (AAAI'92), pp. 123–128
+
+[3] Dougherty J., Kohavi, R., and Sahami, M. (1995), “Supervised and unsupervised
+    discretization of continuous features”, Proc. ICML 1995, pp. 194–202
+    
+[4] Yang, Y. and Webb, G. I. (2002), “A comparative study of discretization methods 
+    for naive-bayes classifiers”, Proc. PKAW 2002, pp. 159-173
+    
+[5] Yang, Y. and Webb, G. I. (2001), “Proportional k-interval discretization 
+    for naive-bayes classifiers”, in Machine learning: ECML 2001, pp. 564–575
+
+[6] Lei Yu and Huan Liu (2003), "Feature Selection for High-Dimensional Data: 
+    A Fast Correlation-Based Filter Solution", Proc. 20th ICML 2003, pp. 856-863
