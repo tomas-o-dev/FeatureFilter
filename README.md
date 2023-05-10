@@ -59,15 +59,16 @@ Examples are in QLCF_docs .py and .ipynb
       ` 'chim-ten'  'chim-log'  'chim-sqrt' `
   - Optional : (boolean) print binning report  
   - #### Binning Strategy
-    > The default value ` mkbins=hgrm ` applies ` numpy.histogram(feature, bins='auto') `.<br> 
+    > The default value ` mkbins=hgrm ` applies ` numpy.histogram(feature, bins='auto') `, 
+    > and repeatedly folds lower bins into the next higher one until there are a maximum of 12 for the feature.<br> 
       Otherwise, the valid values combine an algorithm for calculating the bin 
       edges (cutpoints) with a method for determining the maximum number of bins. 
       
      calculate edges | number of bins
       --------------- | ---------------
       unif: uniform [numpy.linspace()] |ten:  always ten [3,4]
-      mdlp: MDLP algorithm  [1]        |sqrt: sqrt(len(np.unique(feature)))   [5]
-      chim: ChiMerge algorithm  [2]    |log:  log10(len(np.unique(feature)))  [3]
+      mdlp: MDLP algorithm  [1]        |sqrt: sqrt(len(feature))   [5]
+      chim: ChiMerge algorithm  [2]    |log:  log10(len(feature))  [3]
 
 * After transform():
   - the processed dataframe is an attribute<br>` dtzr.binned_df.head() `
