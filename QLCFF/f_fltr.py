@@ -79,7 +79,7 @@ def filter_fdr(dfin, gtin, plvl=0.05, usefdr=True):
     return uvd_yc, uvk_yc     
 
 
-def filter_fcc(dfin, ingt, hipc=0.7, hisu=0.7, usesu=False):
+def filter_fcc(dfin, ingt, hipc=0.82, hisu=0.7, usesu=False):
     from .f_mcor import mulcol
 
     dfdrop, proxies, hicorr, cormtx = mulcol(dfin, ingt, hipc, hisu, usesu)
