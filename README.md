@@ -44,8 +44,8 @@ Examples are in QLCF_docs .py and .ipynb
   - Optional : none
   - X : preprocessor  
     1. selects only column dtypes np.number and pd or np boolean
-    2. nomalizes all columns with signed dtypes to positive numbers
-    3. nomalizes all columns with boolean dtypes to zero//one
+    2. normalizes all columns with signed dtypes to positive numbers
+    3. normalizes all columns with boolean dtypes to zero//one
   - y : Text labels are converted with sklearn LabelEncoder()
 
 * After fit(), the preprocessed dataframe is an attribute<br>` dtzr.prebin_df.head() `
