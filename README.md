@@ -79,3 +79,47 @@ Examples are in QLCF_docs .py and .ipynb
   - the processed dataframe is an attribute<br>` dtzr.binned_df.head() `
   - the dict of bin edges is an attribute<br>` dtzr.cutpoints `
   - note: distribution of values within bins<br>` numpy.bincount(dtzr['num_compromised'].values) `
+
+#### The qlcfFilter Class
+
+* ` ffltr = qlcfFilter()   #Initialise `
+  - Requires : none
+  - Optional : none
+ 
+* ` ffltr.fit(X, y, filters, plvl=0.5, minpc=0.035, minsu=0.0025, hipc=0.82, hisu=0.7) `
+  - Requires : features as pd.dataframe, labels as array-like, list of one or more filters
+  - Optional : *varies depending on filters selected
+  - #### Filters
+    A list with one or more of ` 'Floor', 'FDR', 'FWE', 'FCBF-SU', 'FCBF-PC' `<br>
+    The list is processed in order with progressive filtering
+    - ` 'Floor' `: filters on the basis that low correlation with the target labels (f2y) means low utility for distinguishing class membership. Keeps features that have correlation > a threshold (the defaults were selected through experimentation).
+      - Optional : 
+        - ` minpc ` : threshold for pearson correlation
+        - ` minsu ` : threshold for symmetric uncertainty 
+    - ` 'FDR', 'FWE' `: sklearn univariate chi-square test; selects features to keep based on an upper bound on the expected false discovery rate. ` fwe ` will select more to drop than ` fdr `, and lower thresholds will also select more to drop. The floor filter will select all from either univariate test, and more.
+      - Optional : 
+        - ` plvl ` : chi-square threshold (alpha), standard values are 0.01, 0.05, 0.1
+    - ` 'FCBF-SU', 'FCBF-PC' `: FCBF-style, filter on feature-to-feature (f2f) correlations. Given a group of features with high cross-correlations, keep the one with the highest (f2y) as a proxy for the others (FCBF paper calls this the "dominant feature". The standard threshold for multicolliniarity is > 0.7, the defaults were selected through experimentation. 
+      - Optional : 
+        - ` hipc ` : threshold for "high" f2f pearson correlation
+        - ` hisu ` : threshold for "high" f2f symmetric uncertainty 
+
+    To create layered feature selection filters, apply either ` 'Floor' ` or ` 'FDR', 'FWE' ` before ` 'FCBF-SU' ` and/or  ` 'FCBF-PC' `
+ 
+ * After fit():
+   - the consolidated drop list is an attribute<br>` ffltr.QLCFFilter `
+   - reporting methods are available:
+     - ` ffltr.get_f2y_report(kd='drop') `<br>print feature-to-label (f2y) correlations 
+     - ` fyd = ffltr.get_f2y_dict(kd='drop') `<br>returns a dict of correlations for each filter
+       - Optional : ` kd = 'keep' ` or ` 'drop' `
+     - ` ffltr.get_f2f_report() `<br>print feature to feature (f2f) correlations above threshold report
+     - ` ffd = ffltr.get_f2f_dict() `<br>returns a dict of f2f correlations checked by each filter
+       - f2f is only available for ` 'FCBF-SU' ` or ` 'FCBF-PC' `
+
+* ` reduced_df = ffltr.transform(Xdf) `
+  - Returns  : Xdf after applying the consolidated drop list
+  - Requires : actual pd.dataframe for clf.fit_predict()
+  - Optional : none
+
+Examples are in QLCF_docs .py and .ipynb
+    
