@@ -81,7 +81,7 @@ Examples are in QLCF_docs .py and .ipynb
   - Optional : none
  
 * ` ffltr.fit(X, y, filters, plvl=0.5, minpc=0.035, minsu=0.0025, hipc=0.82, hisu=0.7) `
-  - Requires : features as pd.dataframe, labels as array-like, list of one or more filters
+  - Requires : discretizer.binned_df, labels as array-like, list of one or more filters
   - Optional : *varies depending on filters selected
   - #### Filters
     A list with one or more of ` 'Floor', 'FDR', 'FWE', 'FCBF-SU', 'FCBF-PC' `<br>
