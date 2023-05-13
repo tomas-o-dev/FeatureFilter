@@ -213,10 +213,17 @@ class qlcfFilter(BaseEstimator, TransformerMixin, metaclass=ABCMeta):
         :trudf: actual pd.dataframe for clf.fit_predict()
         :return: filtered trudf
         '''
-        filtered_df = trudf.copy()
-        filtered_df.reset_index(inplace = True, drop = True)
-        filtered_df.drop(self.QLCFFilter, axis = 1, inplace = True)
-        return filtered_df
+        fltrd_df = trudf.copy()
+        fltrd_df.reset_index(inplace = True, drop = True)
+
+        fltrd_df.drop(self.QLCFFilter, axis = 1, inplace = True)
+
+        for col in fltrd_df.columns:
+            uv = len(fltrd_df[col].unique())
+            if uv == 1:
+                fltrd_df.drop(fltrd_df[col].name, axis=1, inplace=True)
+
+        return fltrd_df
 
 ##  --  --  --  --  ##
 
