@@ -30,7 +30,7 @@ fltrs = ['FDR', 'FWE', 'FCBF-PC']
 ffdf = qlcfFilter().fit_transform(dzdf, labels_train, 
                                   fltrs, features_train)
 ```
-Examples are in QLCF_docs .py and .ipynb
+Examples are in QLCF_demo .py and .ipynb
 
 
 #### The Discretizer Class
@@ -116,7 +116,7 @@ Examples are in QLCF_docs .py and .ipynb
   - Requires : actual pd.dataframe for clf.fit_predict()
   - Optional : none
 
-Examples are in QLCF_docs .py and .ipynb
+Examples are in QLCF_demo .py and .ipynb
     
 [1] Fayyad, U. M., and Irani, K. B. (1993). "Multiinterval discretization of 
     continuous-valued attributes for classifcation learning", Proc. 13th 
