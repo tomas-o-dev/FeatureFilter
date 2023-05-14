@@ -4,8 +4,16 @@ import pandas as pd
 def hgbins(feature):
     uv = np.unique(feature)
 
-    bnz, egz = np.histogram(uv, bins='auto')
+# https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html
+# 'doane' makes nicer bins when it can, 'auto' always gives an adequate split
+  
+    bnz, egz = np.histogram(uv, bins='doane')
     egz = egz[np.nonzero(bnz)]
+
+    if len(egz) < 3:
+        bnz, egz = np.histogram(uv, bins='auto')
+        egz = egz[np.nonzero(bnz)]
+
     if uv.min != 0:
         egz[0:1] = 0
 
